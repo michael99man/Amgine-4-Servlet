@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import objects.Message;
-import encryption.DHServlet;
 
 @WebServlet("/")
 // Mapped to hoster/id
@@ -22,9 +21,9 @@ public class Dispatcher extends HttpServlet {
 	// List of chatrooms
 	private static LinkedList<Chatroom> chatroomList = new LinkedList<Chatroom>();
 
-	//Diffie Hellman Extension
+	// Diffie Hellman Extension
 	private static final String DIFFIE_HELLMAN = "/DHKE";
-	
+
 	private static final long serialVersionUID = -8110153131733414341L;
 
 	protected void doGet(HttpServletRequest request,
@@ -46,37 +45,48 @@ public class Dispatcher extends HttpServlet {
 		int offset = id.indexOf("/Amgine_4/");
 		id = id.substring(offset + "/Amgine_4".length() + 1, id.length());
 
-		if (id.indexOf(DIFFIE_HELLMAN) != -1){
-			if (!Functions.isClient(request)){
-				response.getWriter().println("YOU'VE COME TO THE WRONG NEIGHBORHOOD, BROWSER...");
-			}
-				
-			System.out.println("REQUESTING DIFFIE HELLMAN! ZOMG WHUT TO DO?!");
-			id = id.substring(offset + "DIFFIE_HELLMAN".length() + 1, id.length());
-			getChatroom(id).dhProcess(t, request, response);
-		} else if (getChatroom(id) == null) {
-			// This shouldn't happen
+		boolean dhke = false;
+		if (id.indexOf(DIFFIE_HELLMAN) != -1) {
+			dhke = true;
+			id = id.substring(0, id.indexOf(DIFFIE_HELLMAN));
+		}
+
+		if (getChatroom(id) == null) {
+			// This would only happen if a browser tried to access an invalid
+			// URL
+
 			System.out.println("ERROR: CHATROOM '" + id + "' NOT FOUND");
 			response.getWriter().println("Chatroom doesn't exist!");
 			return;
-		} 
+		} else if (dhke) {
+			if (!Functions.isClient(request)) {
+				response.getWriter().println(
+						"YOU'VE COME TO THE WRONG NEIGHBORHOOD, BROWSER...");
+				return;
+			} else {
+				if (getChatroom(id).DHready) {
+					getChatroom(id).dhProcess(t, request, response);
+				}
+				return;
+			}
+		}
 
-		
-		
 		Chatroom cr = getChatroom(id);
 		if (Functions.isClient(request)) {
-			//System.out.println("CHATROOM \"" + id + "\" REQUESTED BY CLIENT");
+			// System.out.println("CHATROOM \"" + id +
+			// "\" REQUESTED BY CLIENT");
 
 			// Sends the request and response to the chatroom for processing
 			cr.process(t, request, response);
 		} else {
 			System.out.println("CHATROOM \"" + id + "\" REQUESTED BY BROWSER");
-			
+
 			PrintWriter out = response.getWriter();
 			out.println("Welcome to chatroom \"" + id + "\"!");
-			
+
 			for (Message m : cr.msgList) {
-				out.println("(" + m.time + ") " + m.sender.name + ": " + m.message);
+				out.println(m.date + " - " + m.time + " " + m.sender.name
+						+ ": " + m.message);
 			}
 			out.close();
 		}

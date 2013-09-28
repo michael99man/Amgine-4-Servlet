@@ -1,10 +1,12 @@
 package main;
 
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Enumeration;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.http.HttpRequest;
 
 public class Functions {
 	
@@ -38,4 +40,10 @@ public class Functions {
 			return false;
 		}
 	}
+	
+	public static String getTime(DateFormat df){
+		Date now = Calendar.getInstance().getTime();
+		return df.format(now);
+	}
 }
+

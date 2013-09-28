@@ -1,21 +1,13 @@
 package main;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
-import java.io.Writer;
 import java.util.LinkedList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.entity.BasicHttpEntity;
+import encryption.DHServlet;
 
 import objects.Message;
 import objects.User;
@@ -28,20 +20,18 @@ public class Chatroom {
 	private static final String NAME = "NAME";
 	// To tell client that there is nothing to receive (header)
 	private static final String NOTHING_NEW = "NOTHING_NEW";
-
-	// To tell the client what the message is (header)
-	private static final String MESSAGE = "MESSAGE";
-
-	// To tell the client who the sender was (header)
-	private static final String SENDER = "SENDER";
-
-	// To tell the client when the message was sent (header)
-	private static final String TIME = "TIME";
+	// POST parameter to show message length
+	private static final String MESSAGE_LENGTH = "MESSAGE_LENGTH";
 
 	public String id;
 	public LinkedList<User> userList = new LinkedList<User>();
 
 	public LinkedList<Message> msgList = new LinkedList<Message>();
+
+	// True if ready to begin DHKE (right after received message length)
+	public boolean DHready = false;
+
+	private DHServlet dhEngine;
 
 	public Chatroom(String id) {
 		this.id = id;
@@ -57,44 +47,92 @@ public class Chatroom {
 			HttpServletResponse response) throws IOException {
 		// Receives this from dispatcher servlet
 		if (t.equals(Type.POST)) {
-			if (Functions.contains(request.getParameterNames(), SEND_MSG)) {
+			if (Functions.contains(request.getParameterNames(), MESSAGE_LENGTH)) {
+				int length = Integer.parseInt(request
+						.getParameter(MESSAGE_LENGTH));
 
+				System.out.println(getUser(request.getParameter(NAME)).name
+						+ " WANTS TO SEND MESSAGE OF LENGTH: " + length);
+
+				// Ready to perform DHKE
+				// When the Threads call now, the clients will be notified
+				dhEngine = new DHServlet(length, this);
+				DHready = true;
+			} else if (Functions
+					.contains(request.getParameterNames(), SEND_MSG)) {
 				User u = getUser(request.getParameter(NAME));
 				Message m = new Message(request.getParameter(SEND_MSG), u);
 				msgList.add(m);
 				System.out.println("Received message: " + m.message);
-				response.getWriter().println("RECEIVED MESSAGE, " + u.name);
+				response.getWriter().println(
+						"SERVLET HAS RECEIVED MESSAGE, " + u.name);
 			}
 		} else if (t.equals(Type.GET)) {
 
-			// If the thread is pulling...
+			// Called only when the Thread pulls
 			if (Functions.has(request, "PULL", "true")) {
 				User u = getUser(request.getHeader(NAME));
 				PrintWriter out = response.getWriter();
 
+				if (DHready) {
+					out.println("DHKE_READY: (" + dhEngine.amount + ")");
+					out.close();
+					return;
+				}
+
+				boolean sent = false;
 				for (Message m : msgList) {
-					//If the message has not yet been received, and the PullThread does NOT belong to the client that sent the message...
+					// If the message has not yet been received, and the
+					// PullThread does NOT belong to the client that sent the
+					// message...
 					if (!m.received && !(m.sender.equals(u))) {
 						System.out.println("SENT MESSAGE TO CLIENT");
 						out.print("(Message: " + m.message + ")");
 						out.print("(Sender: " + m.sender.name + ")");
+						out.print("(Date: " + m.date + ")");
 						out.print("(Time: " + m.time + ")");
+
+						// Creates a new row to aid parsing
+						out.println();
+
 						m.received = true;
+						System.out.println("SENT MESSAGE \"" + m.message
+								+ "\" TO USER \"" + u.name + "\"");
+						sent = true;
 					}
 				}
 
-				// Nothing to be pulled!
-				out.print(NOTHING_NEW);
+				if (!sent) {
+					// Nothing to be pulled!
+					out.print(NOTHING_NEW);
+				}
 			}
-
 		}
 	}
 
 	// Diffie-Hellman processing
 	public void dhProcess(Type t, HttpServletRequest request,
 			HttpServletResponse response) {
-		// TODO Auto-generated method stub
-
+		
+		String s = "";
+		if (t.equals(Type.GET)) {
+			// This is a request
+			// Either for Mod, Base or Other client's computed value
+			s = dhEngine.processGet(request);
+		} else if (t.equals(Type.POST)) {
+			s = dhEngine.processPost(request);
+		}
+		
+		if (s.equals("")){
+			s = "ERROR";
+		}
+		
+		try {
+			System.out.println("RETURNED: " + s);
+			response.getWriter().print(s);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public User getUser(String userID) {
@@ -121,5 +159,11 @@ public class Chatroom {
 
 		System.out.println("USER \"" + user.name
 				+ "\" HAS BEEN ADDED TO CHATROOM \"" + id + "\"");
+	}
+
+	//When DHServlet has finished
+	public void done() {
+		DHready = false;	
+		dhEngine = null;
 	}
 }
