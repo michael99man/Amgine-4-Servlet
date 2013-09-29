@@ -24,6 +24,10 @@ public class Dispatcher extends HttpServlet {
 	// Diffie Hellman Extension
 	private static final String DIFFIE_HELLMAN = "/DHKE";
 
+	//Hoster
+	public static final String HOSTER = "http://amgine4-michael99man.rhcloud.com/";
+	
+	
 	private static final long serialVersionUID = -8110153131733414341L;
 
 	protected void doGet(HttpServletRequest request,
@@ -42,8 +46,8 @@ public class Dispatcher extends HttpServlet {
 		String id = request.getRequestURL().toString();
 
 		// To account for changing hoster URL
-		int offset = id.indexOf("/Amgine_4/");
-		id = id.substring(offset + "/Amgine_4".length() + 1, id.length());
+		int offset = id.indexOf(HOSTER);
+		id = id.substring(offset + HOSTER.length(), id.length());
 
 		boolean dhke = false;
 		if (id.indexOf(DIFFIE_HELLMAN) != -1) {
@@ -54,9 +58,8 @@ public class Dispatcher extends HttpServlet {
 		if (getChatroom(id) == null) {
 			// This would only happen if a browser tried to access an invalid
 			// URL
-
 			System.out.println("ERROR: CHATROOM '" + id + "' NOT FOUND");
-			response.getWriter().println("Chatroom doesn't exist!");
+			response.getWriter().println("Chatroom '" + id + "' doesn't exist!");
 			return;
 		} else if (dhke) {
 			if (!Functions.isClient(request)) {

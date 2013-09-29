@@ -13,12 +13,5 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/Apache HTTPClient/lib/fluent-hc-4.3.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/Apache HTTPClient/lib/httpclient-4.3.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/Apache HTTPClient/lib/httpclient-cache-4.3.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/Apache HTTPClient/lib/httpcore-4.3.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/Apache HTTPClient/lib/httpmime-4.3.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/SpringFramework/aopalliance-1.0.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/SpringFramework/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
