@@ -25,8 +25,9 @@ public class Dispatcher extends HttpServlet {
 	private static final String DIFFIE_HELLMAN = "/DHKE";
 
 	//Hoster
-	public static final String HOSTER = "http://amgine4-michael99man.rhcloud.com/";
+	public static final String HOSTER = "https://amgine4-michael99man.rhcloud.com/";
 	
+	public static final String ALTHOSTER = "http://amgine4-michael99man.rhcloud.com/";
 	
 	private static final long serialVersionUID = -8110153131733414341L;
 
@@ -47,6 +48,11 @@ public class Dispatcher extends HttpServlet {
 
 		// To account for changing hoster URL
 		int offset = id.indexOf(HOSTER);
+		
+		if (offset == -1){
+			offset = id.indexOf(ALTHOSTER);
+		}
+		
 		id = id.substring(offset + HOSTER.length(), id.length());
 
 		boolean dhke = false;

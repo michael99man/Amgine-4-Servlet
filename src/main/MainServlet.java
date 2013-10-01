@@ -1,6 +1,7 @@
 package main;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -71,6 +72,7 @@ public class MainServlet extends HttpServlet {
 	// To join chatroom
 	protected void doGet(HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
+		PrintWriter pw = response.getWriter();
 		if (Functions.isClient(request)) {
 			// Adds the user to the requested chatroom
 			if (Dispatcher.getChatroom(request.getHeader(JOIN_CMD)) != null) {
@@ -90,36 +92,30 @@ public class MainServlet extends HttpServlet {
 				cr.addUser(u);
 
 				// Returns location of chatroom
-				response.getWriter().print(
-						request.getRequestURL().toString() + cr.id);
+				pw.print(request.getRequestURL().toString() + cr.id);
 			} else {
 				System.out.println("CHATROOM \"" + request.getHeader(JOIN_CMD)
 						+ "\" DOES NOT EXIST");
-				response.getWriter().print("ERROR");
+				pw.print("ERROR");
 			}
-
 		} else {
-			response.getWriter().println("Welcome to the main page of my servlet for Amgine 4!");
-			response.getWriter().println("");
-			response.getWriter().println("To use Amgine 4, contact Michael for the .jar application.");
-			response.getWriter().println("If you would like to read recent conversations (unencrypted), just go to currentlink/chatroomID to read the messages in the chatroom.");
-			response.getWriter().println("Thanks for checking out Amgine 4!");
-			response.getWriter().println("\n Hosting provided by Red Hat Cloud");
-			
-			
-			response.getWriter().println("Chatrooms: ");
-			for (Chatroom c: Dispatcher.chatroomList){
+			pw.println("Welcome to the main page of my servlet for Amgine 4!");
+			pw.println("");
+			pw.println("To use Amgine 4, contact Michael for the .jar application.");
+			pw.println("If you would like to read recent conversations (unencrypted), just go to currentlink/chatroomID to read the messages in the chatroom.");
+			pw.println("Thanks for checking out Amgine 4!");
+			pw.println("\nHosting provided by Red Hat Cloud");
+
+			pw.println("\n\n---Chatrooms---");
+			for (Chatroom c : Dispatcher.chatroomList) {
 				String s = "";
-				for (User u: c.userList){
+				for (User u : c.userList) {
 					s += u.name + ", ";
 				}
 				s = s.substring(0, s.length() - 2);
-				
-				System.out.println("\t" + c.id + " (" + s + ")");
+				pw.println("\t" + c.id + " (" + s + ")" + " - " + Dispatcher.HOSTER + c.id);
 			}
-			
-			response.getWriter().close();
-			return;
 		}
+		response.getWriter().close();
 	}
 }
