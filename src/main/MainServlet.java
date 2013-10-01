@@ -106,6 +106,18 @@ public class MainServlet extends HttpServlet {
 			response.getWriter().println("Thanks for checking out Amgine 4!");
 			response.getWriter().println("\n Hosting provided by Red Hat Cloud");
 			
+			
+			response.getWriter().println("Chatrooms: ");
+			for (Chatroom c: Dispatcher.chatroomList){
+				String s = "";
+				for (User u: c.userList){
+					s += u.name + ", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				
+				System.out.println("\t" + c.id + " (" + s + ")");
+			}
+			
 			response.getWriter().close();
 			return;
 		}

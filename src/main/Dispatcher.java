@@ -19,7 +19,7 @@ public class Dispatcher extends HttpServlet {
 	// chatroom
 
 	// List of chatrooms
-	private static LinkedList<Chatroom> chatroomList = new LinkedList<Chatroom>();
+	public static LinkedList<Chatroom> chatroomList = new LinkedList<Chatroom>();
 
 	// Diffie Hellman Extension
 	private static final String DIFFIE_HELLMAN = "/DHKE";
