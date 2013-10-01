@@ -14,6 +14,7 @@ public class Message {
 	
 	//False if there is a new message to be pulled by the Thread of the receiver client
 	public boolean received = false;
+	public boolean encrypted;
 
 	
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
@@ -21,9 +22,10 @@ public class Message {
 	private static final DateFormat TIME_FORMAT = new SimpleDateFormat(
 			"HH:mm:ss");
 	
-	public Message(String msg, User u) {
+	public Message(String msg, User u, boolean e) {
 		sender = u;
 		message = msg;
+		encrypted = e;
 		date = Functions.getTime(DATE_FORMAT);
 		time = Functions.getTime(TIME_FORMAT);
 	}

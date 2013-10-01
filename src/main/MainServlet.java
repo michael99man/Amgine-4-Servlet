@@ -23,7 +23,6 @@ public class MainServlet extends HttpServlet {
 	// TO BE TRUE
 	// NOTE: HEADER, NOT PARAMS
 	public static final String CLIENT_ID = "Client";
-	public static final String BROWSER_MESSAGE = "GTFO YA DIRTY DAMN BROWSER";
 
 	// PARAMETER/HEADER COMMANDS
 
@@ -63,7 +62,8 @@ public class MainServlet extends HttpServlet {
 			response.getWriter().print(
 					request.getRequestURL().toString() + cr.id);
 		} else {
-			response.getWriter().println(BROWSER_MESSAGE);
+			response.getWriter().println("ERROR");
+			response.getWriter().close();
 			return;
 		}
 	}
@@ -99,7 +99,13 @@ public class MainServlet extends HttpServlet {
 			}
 
 		} else {
-			response.getWriter().println(BROWSER_MESSAGE);
+			response.getWriter().println("Welcome to the main page of my servlet for Amgine 4!");
+			response.getWriter().println("");
+			response.getWriter().println("To use Amgine 4, contact Michael for the .jar application.");
+			response.getWriter().println("If you would like to read recent conversations (unencrypted), just go to currentlink/chatroomID to read the messages in the chatroom.");
+			response.getWriter().println("Thanks for checking out Amgine 4!");
+			response.getWriter().println("\n Hosting provided by Red Hat Cloud");
+			
 			response.getWriter().close();
 			return;
 		}

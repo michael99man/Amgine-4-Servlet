@@ -21,7 +21,7 @@ public class Chatroom {
 	// To tell client that there is nothing to receive (header)
 	private static final String NOTHING_NEW = "NOTHING_NEW";
 	// POST parameter to show message length
-	private static final String MESSAGE_LENGTH = "MESSAGE_LENGTH";
+	private static final String AMOUNT = "AMOUNT";
 
 	public String id;
 	public LinkedList<User> userList = new LinkedList<User>();
@@ -47,21 +47,22 @@ public class Chatroom {
 			HttpServletResponse response) throws IOException {
 		// Receives this from dispatcher servlet
 		if (t.equals(Type.POST)) {
-			if (Functions.contains(request.getParameterNames(), MESSAGE_LENGTH)) {
-				int length = Integer.parseInt(request
-						.getParameter(MESSAGE_LENGTH));
+			if (Functions.contains(request.getParameterNames(), AMOUNT)) {
+				int amount = Integer.parseInt(request
+						.getParameter(AMOUNT));
 
 				System.out.println(getUser(request.getParameter(NAME)).name
-						+ " WANTS TO SEND MESSAGE OF LENGTH: " + length);
+						+ " WANTS TO GENERATE " + amount + " DH KEYS");
 
 				// Ready to perform DHKE
 				// When the Threads call now, the clients will be notified
-				dhEngine = new DHServlet(length, this);
+				dhEngine = new DHServlet(amount, this);
 				DHready = true;
 			} else if (Functions
 					.contains(request.getParameterNames(), SEND_MSG)) {
 				User u = getUser(request.getParameter(NAME));
-				Message m = new Message(request.getParameter(SEND_MSG), u);
+				String s = request.getParameter("ENCRYPTED");
+				Message m = new Message(request.getParameter(SEND_MSG), u, s.equalsIgnoreCase("TRUE"));
 				msgList.add(m);
 				System.out.println("Received message: " + m.message);
 				response.getWriter().println(
@@ -88,6 +89,7 @@ public class Chatroom {
 					if (!m.received && !(m.sender.equals(u))) {
 						System.out.println("SENT MESSAGE TO CLIENT");
 						out.print("(Message: " + m.message + ")");
+						out.print("(Encrypted: " + (m.encrypted ? "TRUE)" : "FALSE)"));
 						out.print("(Sender: " + m.sender.name + ")");
 						out.print("(Date: " + m.date + ")");
 						out.print("(Time: " + m.time + ")");
@@ -155,7 +157,7 @@ public class Chatroom {
 
 	public void addUser(User user) {
 		userList.add(user);
-		msgList.add(new Message(user.name + " has joined the chatroom!", user));
+		msgList.add(new Message(user.name + " has joined the chatroom!", user, false));
 
 		System.out.println("USER \"" + user.name
 				+ "\" HAS BEEN ADDED TO CHATROOM \"" + id + "\"");
