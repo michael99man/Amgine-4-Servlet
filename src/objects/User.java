@@ -10,6 +10,4 @@ public class User {
 		this.IP = IP;
 		this.name = name;
 	}
-	
-	
 }

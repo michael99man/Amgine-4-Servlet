@@ -33,9 +33,13 @@ public class Chatroom {
 
 	private DHServlet dhEngine;
 
+	//User representation
+	private User instance;
+	
 	public Chatroom(String id) {
 		this.id = id;
 		Dispatcher.addChatroom(this);
+		instance = new User("Server", id);
 	}
 
 	public enum Type {
@@ -157,7 +161,7 @@ public class Chatroom {
 
 	public void addUser(User user) {
 		userList.add(user);
-		msgList.add(new Message(user.name + " has joined the chatroom!", user, false));
+		msgList.add(new Message(user.name + " has joined the chatroom!", instance, false));
 
 		System.out.println("USER \"" + user.name
 				+ "\" HAS BEEN ADDED TO CHATROOM \"" + id + "\"");
