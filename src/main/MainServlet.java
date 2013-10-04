@@ -81,7 +81,7 @@ public class MainServlet extends HttpServlet {
 						.size() >= 2) {
 					System.out
 							.println("Chatroom is full! >2 member chatrooms not yet implemented!");
-					response.getWriter().println("ERROR");
+					pw.print("ERROR");
 					return;
 				}
 
@@ -112,7 +112,7 @@ public class MainServlet extends HttpServlet {
 				for (User u : c.userList) {
 					s += u.name + ", ";
 				}
-				s = s.substring(0, s.length() - 2);
+				if (!s.equals("")) s = s.substring(0, s.length() - 2);
 				pw.println("\t" + c.id + " (" + s + ")" + " - " + Dispatcher.HOSTER + c.id);
 			}
 		}

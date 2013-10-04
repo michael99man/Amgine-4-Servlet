@@ -22,6 +22,7 @@ public class Chatroom {
 	private static final String NOTHING_NEW = "NOTHING_NEW";
 	// POST parameter to show message length
 	private static final String AMOUNT = "AMOUNT";
+	private static final String LEAVE_CMD = "LEAVE_CHATROOM";
 
 	public String id;
 	public LinkedList<User> userList = new LinkedList<User>();
@@ -33,9 +34,9 @@ public class Chatroom {
 
 	private DHServlet dhEngine;
 
-	//User representation
+	// User representation of Server
 	private User instance;
-	
+
 	public Chatroom(String id) {
 		this.id = id;
 		Dispatcher.addChatroom(this);
@@ -52,8 +53,7 @@ public class Chatroom {
 		// Receives this from dispatcher servlet
 		if (t.equals(Type.POST)) {
 			if (Functions.contains(request.getParameterNames(), AMOUNT)) {
-				int amount = Integer.parseInt(request
-						.getParameter(AMOUNT));
+				int amount = Integer.parseInt(request.getParameter(AMOUNT));
 
 				System.out.println(getUser(request.getParameter(NAME)).name
 						+ " WANTS TO GENERATE " + amount + " DH KEYS");
@@ -66,11 +66,20 @@ public class Chatroom {
 					.contains(request.getParameterNames(), SEND_MSG)) {
 				User u = getUser(request.getParameter(NAME));
 				String s = request.getParameter("ENCRYPTED");
-				Message m = new Message(request.getParameter(SEND_MSG), u, s.equalsIgnoreCase("TRUE"));
+				Message m = new Message(request.getParameter(SEND_MSG), u,
+						s.equalsIgnoreCase("TRUE"));
 				msgList.add(m);
 				System.out.println("Received message: " + m.message);
 				response.getWriter().println(
 						"SERVLET HAS RECEIVED MESSAGE, " + u.name);
+			} else if (Functions.contains(request.getParameterNames(),
+					LEAVE_CMD)) {
+				// When a user leaves the chatroom
+				User u = getUser(request.getParameter(NAME));
+				userList.remove(u);
+				Message m = new Message(u.name + " has left the chatroom.",
+						instance, false);
+				msgList.add(m);
 			}
 		} else if (t.equals(Type.GET)) {
 
@@ -93,7 +102,8 @@ public class Chatroom {
 					if (!m.received && !(m.sender.equals(u))) {
 						System.out.println("SENT MESSAGE TO CLIENT");
 						out.print("(Message: " + m.message + ")");
-						out.print("(Encrypted: " + (m.encrypted ? "TRUE)" : "FALSE)"));
+						out.print("(Encrypted: "
+								+ (m.encrypted ? "TRUE)" : "FALSE)"));
 						out.print("(Sender: " + m.sender.name + ")");
 						out.print("(Date: " + m.date + ")");
 						out.print("(Time: " + m.time + ")");
@@ -119,7 +129,7 @@ public class Chatroom {
 	// Diffie-Hellman processing
 	public void dhProcess(Type t, HttpServletRequest request,
 			HttpServletResponse response) {
-		
+
 		String s = "";
 		if (t.equals(Type.GET)) {
 			// This is a request
@@ -128,11 +138,11 @@ public class Chatroom {
 		} else if (t.equals(Type.POST)) {
 			s = dhEngine.processPost(request);
 		}
-		
-		if (s.equals("")){
+
+		if (s.equals("")) {
 			s = "ERROR";
 		}
-		
+
 		try {
 			System.out.println("RETURNED: " + s);
 			response.getWriter().print(s);
@@ -161,15 +171,16 @@ public class Chatroom {
 
 	public void addUser(User user) {
 		userList.add(user);
-		msgList.add(new Message(user.name + " has joined the chatroom!", instance, false));
+		msgList.add(new Message(user.name + " has joined the chatroom!",
+				instance, false));
 
 		System.out.println("USER \"" + user.name
 				+ "\" HAS BEEN ADDED TO CHATROOM \"" + id + "\"");
 	}
 
-	//When DHServlet has finished
+	// When DHServlet has finished
 	public void done() {
-		DHready = false;	
+		DHready = false;
 		dhEngine = null;
 	}
 }
