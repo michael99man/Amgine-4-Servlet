@@ -24,7 +24,6 @@ public class Functions {
 
 	public static boolean contains(Enumeration<String> enumeration,
 			String value) {
-
 		while (enumeration.hasMoreElements()) {
 			if (enumeration.nextElement().equalsIgnoreCase(value)) {
 				return true;

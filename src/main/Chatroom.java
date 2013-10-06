@@ -2,12 +2,11 @@ package main;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.util.LinkedList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import encryption.DHServlet;
 
 import objects.Message;
 import objects.User;
@@ -20,8 +19,7 @@ public class Chatroom {
 	private static final String NAME = "NAME";
 	// To tell client that there is nothing to receive (header)
 	private static final String NOTHING_NEW = "NOTHING_NEW";
-	// POST parameter to show message length
-	private static final String AMOUNT = "AMOUNT";
+
 	private static final String LEAVE_CMD = "LEAVE_CHATROOM";
 
 	public String id;
@@ -29,10 +27,8 @@ public class Chatroom {
 
 	public LinkedList<Message> msgList = new LinkedList<Message>();
 
-	// True if ready to begin DHKE (right after received message length)
-	public boolean DHready = false;
-
-	private DHServlet dhEngine;
+	// True if ready to begin RSA
+	public boolean RSAready = false;
 
 	// User representation of Server
 	private User instance;
@@ -52,22 +48,11 @@ public class Chatroom {
 			HttpServletResponse response) throws IOException {
 		// Receives this from dispatcher servlet
 		if (t.equals(Type.POST)) {
-			if (Functions.contains(request.getParameterNames(), AMOUNT)) {
-				int amount = Integer.parseInt(request.getParameter(AMOUNT));
-
-				System.out.println(getUser(request.getParameter(NAME)).name
-						+ " WANTS TO GENERATE " + amount + " DH KEYS");
-
-				// Ready to perform DHKE
-				// When the Threads call now, the clients will be notified
-				dhEngine = new DHServlet(amount, this);
-				DHready = true;
-			} else if (Functions
-					.contains(request.getParameterNames(), SEND_MSG)) {
+			if (Functions.contains(request.getParameterNames(), SEND_MSG)) {
 				User u = getUser(request.getParameter(NAME));
-				String s = request.getParameter("ENCRYPTED");
 				Message m = new Message(request.getParameter(SEND_MSG), u,
-						s.equalsIgnoreCase("TRUE"));
+						request.getParameter("ENCRYPTED").equalsIgnoreCase(
+								"TRUE"));
 				msgList.add(m);
 				System.out.println("Received message: " + m.message);
 				response.getWriter().println(
@@ -87,12 +72,6 @@ public class Chatroom {
 			if (Functions.has(request, "PULL", "true")) {
 				User u = getUser(request.getHeader(NAME));
 				PrintWriter out = response.getWriter();
-
-				if (DHready) {
-					out.println("DHKE_READY: (" + dhEngine.amount + ")");
-					out.close();
-					return;
-				}
 
 				boolean sent = false;
 				for (Message m : msgList) {
@@ -126,29 +105,54 @@ public class Chatroom {
 		}
 	}
 
-	// Diffie-Hellman processing
-	public void dhProcess(Type t, HttpServletRequest request,
+	// RSA Processing; Only used to get/set Public key and exponent
+	public void rsaProcess(Type t, HttpServletRequest request,
 			HttpServletResponse response) {
-
-		String s = "";
-		if (t.equals(Type.GET)) {
-			// This is a request
-			// Either for Mod, Base or Other client's computed value
-			s = dhEngine.processGet(request);
-		} else if (t.equals(Type.POST)) {
-			s = dhEngine.processPost(request);
-		}
-
-		if (s.equals("")) {
-			s = "ERROR";
-		}
-
 		try {
-			System.out.println("RETURNED: " + s);
-			response.getWriter().print(s);
+			PrintWriter out = response.getWriter();
+
+			if (t.equals(Type.GET)) {
+				// This is a request to get the Public Modulus and Public
+				User u = getOtherUser(request.getHeader("NAME"));
+				if (u.received) {
+					if (Functions.contains(request.getHeaderNames(), "MODULUS")){
+						System.out.println("Returned " + u.name + "'s modulus");
+						out.print(u.publicModulus);
+					} else if (Functions.contains(request.getHeaderNames(), "EXPONENT")){
+						System.out.println("Returned " + u.name + "'s exponent");
+						out.print(u.publicExponent);
+					} else {
+						System.out.println("WTF: Bad GET Request");
+					}
+				} else {
+					out.print("NOT_READY");
+				}
+			} else if (t.equals(Type.POST)) {
+				User u = getUser(request.getParameter("NAME"));
+				if (u == null){
+					System.out.println("NO USER BY THE NAME OF " + request.getHeader("NAME"));
+				}
+				
+				u.publicModulus = new BigInteger(
+						request.getParameter("MODULUS"));
+				System.out.println(u.name + "'s public modulus: " + u.publicModulus);
+				u.publicExponent = new BigInteger(
+						request.getParameter("EXPONENT"));
+				System.out.println(u.name + "'s public exponent: " + u.publicExponent);
+				u.received = true;
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private User getOtherUser(String userID) {
+		for (User u : userList) {
+			if (!u.name.equalsIgnoreCase(userID)) {
+				return u;
+			}
+		}
+		return null;
 	}
 
 	public User getUser(String userID) {
@@ -178,9 +182,4 @@ public class Chatroom {
 				+ "\" HAS BEEN ADDED TO CHATROOM \"" + id + "\"");
 	}
 
-	// When DHServlet has finished
-	public void done() {
-		DHready = false;
-		dhEngine = null;
-	}
 }

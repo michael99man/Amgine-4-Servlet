@@ -3,6 +3,7 @@ package main;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
+import java.util.Locale;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import objects.Message;
+import objects.User;
 
 @WebServlet("/")
 // Mapped to hoster/id
@@ -22,11 +24,12 @@ public class Dispatcher extends HttpServlet {
 	public static LinkedList<Chatroom> chatroomList = new LinkedList<Chatroom>();
 
 	// Diffie Hellman Extension
-	private static final String DIFFIE_HELLMAN = "/DHKE";
+	private static final String EXTENSION = "/RSA";
 
-	//Hoster
-	public static final String HOSTER = "amgine4-michael99man.rhcloud.com/";
-	
+	// Hoster
+	// public static final String HOSTER = "amgine4-michael99man.rhcloud.com/";
+	public static final String HOSTER = "localhost:8080/Amgine_4/";
+
 	private static final long serialVersionUID = -8110153131733414341L;
 
 	protected void doGet(HttpServletRequest request,
@@ -46,29 +49,43 @@ public class Dispatcher extends HttpServlet {
 
 		// To account for changing hoster URL
 		int offset = id.indexOf(HOSTER);
-		
+
 		id = id.substring(offset + HOSTER.length(), id.length());
 
-		boolean dhke = false;
-		if (id.indexOf(DIFFIE_HELLMAN) != -1) {
-			dhke = true;
-			id = id.substring(0, id.indexOf(DIFFIE_HELLMAN));
+		boolean rsa = false;
+		
+		int i = id.indexOf(EXTENSION);
+		if (i == -1) i = id.indexOf(EXTENSION.toLowerCase(Locale.US));
+		
+		if (i!=-1) {
+			rsa = true;
+			id = id.substring(0, i);
 		}
 
 		if (getChatroom(id) == null) {
-			// This would only happen if a browser tried to access an invalid URL
+			// This would only happen if a browser tried to access an invalid
+			// URL
 			System.out.println("ERROR: CHATROOM '" + id + "' NOT FOUND");
-			response.getWriter().println("Chatroom '" + id + "' doesn't exist!");
+			response.getWriter()
+					.println("Chatroom '" + id + "' doesn't exist!");
 			return;
-		} else if (dhke) {
+		} else if (rsa) {
 			if (!Functions.isClient(request)) {
-				response.getWriter().println(
-						"YOU'VE COME TO THE WRONG NEIGHBORHOOD, BROWSER...");
+				PrintWriter out = response.getWriter();
+				out.println("RSA INFO FOR CHATROOM: '" + id + "'");
+				for (User u : getChatroom(id).userList) {
+					out.println(u.name + ":");
+					if (u.received) {
+						out.println("\tModulus: " + u.publicModulus);
+						out.println("\tExponent: " + u.publicExponent);
+					} else {
+						out.println("\tNot received");
+					}
+				}
 				return;
 			} else {
-				if (getChatroom(id).DHready) {
-					getChatroom(id).dhProcess(t, request, response);
-				}
+				System.out.println("RSA Process: " + t.name());
+				getChatroom(id).rsaProcess(t, request, response);
 				return;
 			}
 		}
